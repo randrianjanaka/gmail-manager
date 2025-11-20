@@ -1,0 +1,23 @@
+services:
+  backend:
+    build:
+      context: ./gmail-manager-backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./gmail-manager-backend:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Add other environment variables here if needed
+
+  frontend:
+    build:
+      context: ./gmail-manager-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend

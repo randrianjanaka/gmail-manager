@@ -44,3 +44,15 @@ class BatchActionRequest(BaseModel):
     query_params: Optional[Dict[str, Any]] = {}
     add_label_names: Optional[List[str]] = []
     remove_label_names: Optional[List[str]] = []
+
+class SubjectCount(BaseModel):
+    subject: str
+    count: int
+
+class SubjectCountListResponse(BaseModel):
+    subjects: List[SubjectCount]
+
+class FullDashboardResponse(BaseModel):
+    total_emails: int
+    unread_emails: int
+    subjects: List[SubjectCount]

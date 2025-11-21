@@ -1,3 +1,4 @@
+import random
 import os.path
 import logging
 import time
@@ -319,7 +320,8 @@ class GmailService:
         """Moves an email to the trash."""
         try:
             logging.info(f"Moving email '{email_id}' to trash.")
-            self.service.users().messages().trash(userId='me', id=email_id).execute()
+            service = self._get_gmail_service() # Use new service instance
+            service.users().messages().trash(userId='me', id=email_id).execute()
             logging.info(f"Successfully moved email '{email_id}' to trash.")
         except HttpError as error:
             logging.error(f"HttpError trashing email '{email_id}': {error.content}", exc_info=True)
@@ -340,11 +342,12 @@ class GmailService:
         """
         try:
             logging.info(f"Modifying email '{email_id}': ADD {add_label_ids}, REMOVE {remove_label_ids}")
+            service = self._get_gmail_service() # Use new service instance
             body = {
                 'addLabelIds': add_label_ids,
                 'removeLabelIds': remove_label_ids
             }
-            self.service.users().messages().modify(
+            service.users().messages().modify( # Use new service instance
                 userId='me', id=email_id, body=body
             ).execute()
             logging.info(f"Successfully modified labels for email '{email_id}'.")
@@ -388,32 +391,33 @@ class GmailService:
             if exception:
                 logging.error(f"Error in batch action for id {request_id}: {exception}")
 
+        service = self._get_gmail_service() # Use new service instance
         # Reduced chunk size to 10 for modification operations to ensure high stability
         chunk_size = 10
         for i in range(0, len(ids), chunk_size):
             chunk = ids[i:i + chunk_size]
-            batch = self.service.new_batch_http_request(callback=batch_callback)
+            batch = service.new_batch_http_request(callback=batch_callback) # Use new service instance
             
             for email_id in chunk:
                 if action == 'trash':
-                    batch.add(self.service.users().messages().trash(userId='me', id=email_id))
+                    batch.add(service.users().messages().trash(userId='me', id=email_id)) # Use new service instance
                 elif action == 'archive':
-                     batch.add(self.service.users().messages().modify(
+                     batch.add(service.users().messages().modify( # Use new service instance
                         userId='me', id=email_id, body={'removeLabelIds': ['INBOX', 'UNREAD']}
                     ))
                 elif action == 'assign_labels':
                     add_ids = [self.labels_map.get(n.upper()) for n in (add_labels or []) if self.labels_map.get(n.upper())]
                     remove_ids = [self.labels_map.get(n.upper()) for n in (remove_labels or []) if self.labels_map.get(n.upper())]
                     if 'UNREAD' not in remove_ids: remove_ids.append('UNREAD')
-                    batch.add(self.service.users().messages().modify(
+                    batch.add(service.users().messages().modify( # Use new service instance
                         userId='me', id=email_id, body={'addLabelIds': add_ids, 'removeLabelIds': remove_ids}
                     ))
                 elif action == 'mark_read':
-                    batch.add(self.service.users().messages().modify(
+                    batch.add(service.users().messages().modify( # Use new service instance
                         userId='me', id=email_id, body={'removeLabelIds': ['UNREAD']}
                     ))
                 elif action == 'mark_unread':
-                    batch.add(self.service.users().messages().modify(
+                    batch.add(service.users().messages().modify( # Use new service instance
                         userId='me', id=email_id, body={'addLabelIds': ['UNREAD']}
                     ))
             
@@ -423,3 +427,207 @@ class GmailService:
                 time.sleep(1.0)
             except Exception as e:
                  logging.error(f"Batch execution failed for chunk {i}: {e}")
+
+    def _execute_with_retry(self, request, max_retries=5):
+        """
+        Executes a Google API request with exponential backoff retry logic.
+        Handles 429 (Too Many Requests) and SSL errors.
+        """
+        for attempt in range(max_retries):
+            try:
+                return request.execute()
+            except (HttpError, ssl.SSLError) as e:
+                if isinstance(e, HttpError):
+                    # If it's not a rate limit or server error, raise immediately
+                    if e.resp.status not in [429, 500, 502, 503, 504]:
+                        raise e
+                
+                if attempt == max_retries - 1:
+                    logging.error(f"Max retries reached for request. Last error: {e}")
+                    raise e
+                
+                # Exponential backoff: 2^attempt + random jitter
+                sleep_time = (2 ** attempt) + random.uniform(0, 1)
+                logging.warning(f"Request failed with {e}. Retrying in {sleep_time:.2f}s...")
+                time.sleep(sleep_time)
+
+    def _count_messages(self, query: str, label_ids: list = None) -> int:
+        """
+        Helper to accurately count messages by iterating through all pages.
+        """
+        total_count = 0
+        page_token = None
+        service = self._get_gmail_service() # Use new service instance
+        
+        while True:
+            request = service.users().messages().list( # Use new service instance
+                userId='me',
+                labelIds=label_ids,
+                q=query,
+                pageToken=page_token,
+                maxResults=500,
+                fields="nextPageToken,messages(id)",
+                includeSpamTrash=False
+            )
+            
+            results = self._execute_with_retry(request)
+            
+            messages = results.get('messages', [])
+            total_count += len(messages)
+            
+            page_token = results.get('nextPageToken')
+            if not page_token:
+                break
+            
+            # Small delay between pages to be nice to the API
+            time.sleep(0.1)
+            
+        return total_count
+
+    def get_dashboard_stats(self) -> dict:
+        """
+        Fetches dashboard statistics: Total and Unread counts for INBOX -> Primary.
+        Uses accurate counting by traversing all pages (optimized to fetch IDs only).
+        """
+        try:
+            # 1. Total Emails in Primary Inbox
+            # We use _count_messages which is optimized to fetch only IDs
+            total_emails = self._count_messages(query='category:primary', label_ids=['INBOX'])
+            
+            # 2. Unread Emails in Primary Inbox
+            unread_emails = self._count_messages(query='category:primary is:unread', label_ids=['INBOX'])
+            
+            return {
+                "total_emails": total_emails,
+                "unread_emails": unread_emails
+            }
+        except Exception as e:
+            logging.error(f"Error fetching dashboard stats: {e}", exc_info=True)
+            return {"total_emails": 0, "unread_emails": 0}
+
+    def get_subject_counts(self, label_ids: list, limit: int = 1000) -> list:
+        """
+        Aggregates subject counts for the given labels.
+        Iterates through pages to get accurate counts, up to a limit.
+        Returns a list of dicts: [{'subject': '...', 'count': 10}, ...] sorted by count desc.
+        """
+        try:
+            subject_counts = {}
+            page_token = None
+            total_processed = 0
+            service = self._get_gmail_service() # Use new service instance
+            
+            # Batch request callback
+            def batch_callback(request_id, response, exception):
+                if exception:
+                    logging.warning(f"Error fetching headers for msg {request_id}: {exception}")
+                    return
+                
+                headers = response.get('payload', {}).get('headers', [])
+                subject = next((h['value'] for h in headers if h['name'] == 'Subject'), 'No Subject')
+                if subject:
+                    subject_counts[subject] = subject_counts.get(subject, 0) + 1
+
+            while True:
+                # Check limit
+                if limit and total_processed >= limit:
+                    break
+
+                # 1. List IDs for current page
+                request = service.users().messages().list(
+                    userId='me',
+                    labelIds=label_ids,
+                    pageToken=page_token,
+                    maxResults=500, # Max allowed for list
+                    fields="nextPageToken,messages(id)"
+                )
+                
+                results = self._execute_with_retry(request)
+                
+                messages = results.get('messages', [])
+                
+                if messages:
+                    # 2. Batch fetch headers for these messages
+                    # Batch size 20 for stability (avoid 429 concurrent requests)
+                    chunk_size = 20
+                    
+                    # If adding this chunk exceeds limit, truncate
+                    if limit and (total_processed + len(messages)) > limit:
+                        messages = messages[:limit - total_processed]
+
+                    for i in range(0, len(messages), chunk_size):
+                        chunk = messages[i:i + chunk_size]
+                        batch = service.new_batch_http_request(callback=batch_callback)
+                        
+                        for msg in chunk:
+                            batch.add(
+                                service.users().messages().get(
+                                    userId='me', 
+                                    id=msg['id'], 
+                                    format='metadata', 
+                                    metadataHeaders=['Subject']
+                                )
+                            )
+                        try:
+                            batch.execute()
+                            time.sleep(1.0) # Increased delay between batches
+                        except Exception as e:
+                            logging.error(f"Batch execution failed during subject count: {e}")
+                    
+                    total_processed += len(messages)
+
+                page_token = results.get('nextPageToken')
+                if not page_token:
+                    break
+                
+                # Small delay between pages
+                time.sleep(0.1)
+            
+            # Convert to list of dicts
+            result = [
+                {"subject": subj, "count": count} 
+                for subj, count in subject_counts.items()
+            ]
+            
+            # Sort by count descending
+            result.sort(key=lambda x: x['count'], reverse=True)
+            
+            return result
+        except Exception as e:
+            logging.error(f"Error calculating subject counts: {e}", exc_info=True)
+            return []
+
+    def get_full_dashboard_data(self, label_ids: list) -> dict:
+        """
+        Fetches all dashboard data (Total, Unread, Subject Counts) in a single pass.
+        Uses a hybrid approach:
+        1. Fast 'list' calls for Total and Unread counts (accurate, fast).
+        2. Limited 'get' calls for Subject analysis (recent 1000 emails).
+        """
+        try:
+            logging.info("Fetching full dashboard data with hybrid strategy.")
+            
+            # 1. Fast Total Count
+            # Uses list() which only fetches IDs, very fast.
+            total_emails = self._count_messages(query=None, label_ids=label_ids)
+            
+            # 2. Fast Unread Count
+            # Uses list() with q='is:unread', very fast.
+            unread_emails = self._count_messages(query="is:unread", label_ids=label_ids)
+            
+            # 3. Subject Analysis (Limited)
+            # Only analyze the most recent 1000 emails to keep it fast.
+            subjects_list = self.get_subject_counts(label_ids=label_ids, limit=1000)
+            
+            return {
+                "total_emails": total_emails,
+                "unread_emails": unread_emails,
+                "subjects": subjects_list
+            }
+        except Exception as e:
+            logging.error(f"Error fetching full dashboard data: {e}", exc_info=True)
+            return {
+                "total_emails": 0,
+                "unread_emails": 0,
+                "subjects": []
+            }

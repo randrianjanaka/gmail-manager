@@ -51,11 +51,22 @@ interface ProgressState {
     message: string;
 }
 
+import { TaskProvider, useTasks } from '@/contexts/task-context'
+import TaskList from '@/components/task-list'
+
 export default function Home() {
+  return (
+    <TaskProvider>
+      <HomeContent />
+      <TaskList />
+    </TaskProvider>
+  )
+}
+
+function HomeContent() {
   const [currentView, setCurrentView] = useState<'dashboard' | 'emails'>('dashboard')
   const [selection, setSelection] = useState<{ type: 'folder' | 'label', name: string, subfolder?: string }>({ type: 'folder', name: 'INBOX', subfolder: 'Primary' });
   const [emails, setEmails] = useState<any[]>([])
-  const [dashboardData, setDashboardData] = useState(null)
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set())
   const [isAllMatchingSelected, setIsAllMatchingSelected] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -164,19 +175,8 @@ export default function Home() {
   }, []);
 
 
-  useEffect(() => {
-    if (currentView === 'dashboard') {
-      const fetchDashboard = async () => {
-        try {
-          const response = await fetch(`${API_BASE}/dashboard/summary`)
-          if (response.ok) setDashboardData(await response.json())
-        } catch (error) {
-          console.error('Failed to fetch dashboard:', error)
-        }
-      }
-      fetchDashboard()
-    }
-  }, [currentView])
+  // Removed auto-fetch dashboard effect
+
 
   const resetAndFetch = () => {
     setCurrentPageIndex(0);
@@ -370,7 +370,7 @@ export default function Home() {
       setShowArchiveConfirm(true);
       
       // We refresh in background but keep loading state false here (managed by alert dialog now)
-      fetchEmails();
+      // fetchEmails(); // REMOVED: Don't fetch yet, wait for archive decision
     } catch (error) {
       console.error('Failed to assign labels:', error)
       toast({ variant: "destructive", title: "Error", description: "Failed to assign labels." })
@@ -402,6 +402,9 @@ export default function Home() {
       
       await processBatchOperation('archive', { action: 'archive' }, 'Archiving emails', ids);
       
+    // Refresh list AFTER archive action
+    await fetchEmails();
+
       setSelectedEmailId(null); // Ensure single view closes if applicable
   }
   
@@ -409,6 +412,7 @@ export default function Home() {
       setShowArchiveConfirm(false);
       if (!selectedEmailId) {
           handleClearSelection();
+        fetchEmails(); // Refresh list if they chose NOT to archive
       }
   }
 
@@ -536,7 +540,7 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex-1 overflow-auto flex flex-col">
         {currentView === 'dashboard' ? (
-          <Dashboard data={dashboardData} />
+          <Dashboard allLabels={allLabels} />
         ) : (
           <div className="p-6 flex-1 overflow-hidden flex flex-col">
             <div className="mb-6 flex justify-between items-center">

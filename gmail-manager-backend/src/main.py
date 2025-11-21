@@ -6,7 +6,8 @@ from typing import List, Optional
 
 from .schemas import (
     EmailListResponse, UniqueSubjectsResponse, ModifyLabelsRequest,
-    LabelListResponse, EmailDetails, BatchActionRequest, EmailIdListResponse
+    LabelListResponse, EmailDetails, BatchActionRequest, EmailIdListResponse,
+    SubjectCountListResponse, FullDashboardResponse
 )
 from .gmail_service import GmailService
 from .config import FRONTEND_URL
@@ -275,12 +276,67 @@ def get_dashboard_summary():
     Placeholder endpoint for a future dashboard.
     Updated to match the data structure expected by the frontend.
     """
+    stats = gmail_service.get_dashboard_stats()
     return {
-        "message": "Dashboard feature is under development.",
-        "total_emails": 1234,
-        "unread_emails": 56,
-        "sent_emails": 789
+        "message": "Dashboard data loaded.",
+        "total_emails": stats.get("total_emails", 0),
+        "unread_emails": stats.get("unread_emails", 0)
     }
+
+@app.get("/dashboard/subjects", response_model=SubjectCountListResponse, tags=["Dashboard"])
+def get_dashboard_subjects(
+    folder: Optional[str] = Query(None),
+    inbox_filter: Optional[str] = Query(None),
+    label: Optional[str] = Query(None)
+):
+    """
+    Retrieves subject counts for a specific folder/label.
+    Defaults to INBOX -> Primary if nothing specified.
+    """
+    label_ids = []
+    inbox_categories = {
+        "PRIMARY": "CATEGORY_PERSONAL",
+        "PROMOTIONS": "CATEGORY_PROMOTIONS",
+        "SOCIAL": "CATEGORY_SOCIAL",
+    }
+
+    if label:
+        label_id = gmail_service.labels_map.get(label.upper())
+        if label_id: 
+            label_ids.append(label_id)
+        else:
+            label_ids.append(label.upper())
+    elif folder and folder.upper() == 'INBOX' and inbox_filter and inbox_filter.upper() in inbox_categories:
+        label_ids.append('INBOX')
+        label_ids.append(inbox_categories[inbox_filter.upper()])
+    elif folder:
+        label_ids.append(folder.upper())
+    
+    # Default to INBOX -> Primary if nothing provided
+    if not label_ids:
+        label_ids.append('INBOX')
+        label_ids.append('CATEGORY_PERSONAL')
+
+    try:
+        counts = gmail_service.get_subject_counts(label_ids=label_ids)
+        return {"subjects": counts}
+    except Exception as e:
+        logging.error(f"Error in get_dashboard_subjects: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/dashboard/full", response_model=FullDashboardResponse, tags=["Dashboard"])
+def get_full_dashboard():
+    """
+    Retrieves all dashboard data (Total, Unread, Subjects) for INBOX -> Primary in one go.
+    """
+    try:
+        # INBOX + CATEGORY_PERSONAL
+        label_ids = ['INBOX', 'CATEGORY_PERSONAL']
+        data = gmail_service.get_full_dashboard_data(label_ids=label_ids)
+        return data
+    except Exception as e:
+        logging.error(f"Error in get_full_dashboard: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/alerts/custom", tags=["Alerts"])
 def create_custom_alert():

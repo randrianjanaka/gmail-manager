@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Mail, Loader2, Eye } from 'lucide-react'
+import { Mail, Loader2, Eye, Menu, X } from 'lucide-react'
 import Dashboard from '@/components/dashboard'
 import FolderNav from '@/components/folder-nav'
 import EmailList from '@/components/email-list'
@@ -507,16 +507,37 @@ function HomeContent() {
   const currentStart = currentPageIndex * itemsPerPage + 1;
   const currentEnd = currentStart + emails.length - 1;
 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   return (
-    <div className="flex h-screen bg-background relative">
+    <div className="flex h-screen bg-background relative flex-col md:flex-row">
       <Toaster />
+      {/* Mobile Header */}
+      <div className="md:hidden p-4 border-b border-border bg-card flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          <Mail className="w-6 h-6 text-primary" />
+          <h1 className="text-xl font-bold text-foreground">Gmail</h1>
+        </div>
+        <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </Button>
+      </div>
+
+
+
       {/* Sidebar */}
-      <aside className="w-64 border-r border-border bg-card flex flex-col h-full">
-        <div className="p-6 border-b border-border shrink-0">
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card flex-col h-full transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:flex
+        ${isMobileMenuOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'}
+      `}>
+        <div className="p-6 border-b border-border shrink-0 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Mail className="w-6 h-6 text-primary" />
             <h1 className="text-xl font-bold text-foreground">Gmail</h1>
           </div>
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMobileMenuOpen(false)}>
+            <X className="w-5 h-5" />
+          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -669,6 +690,16 @@ function HomeContent() {
                 </div>
             </div>
         )}
+
+      {/* Mobile Overlay */}
+      {
+        isMobileMenuOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+        )
+      }
     </div>
   )
 }

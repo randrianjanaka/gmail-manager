@@ -49,16 +49,16 @@ export default function FolderNav({ selection, onSelectFolder, onSelectLabel, la
           if (label.name === 'INBOX') {
             return (
               <div key={label.id}>
-                <button onClick={() => onSelectFolder(label.name, 'Primary')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm ${isActive('folder', 'INBOX') ? 'bg-muted' : 'text-foreground hover:bg-muted'}`}>
+                <button onClick={() => onSelectFolder(label.name, 'Primary')} className={`w-full flex items-center gap-3 px-3 py-3 md:py-2 rounded-lg transition-colors text-sm min-h-[44px] md:min-h-0 ${isActive('folder', 'INBOX') ? 'bg-muted' : 'text-foreground hover:bg-muted'}`}>
                   <Folder className="w-4 h-4" />{label.name}
-                  <button onClick={(e) => {e.stopPropagation(); setExpandedInbox(!expandedInbox)}} className="ml-auto">
+                  <button onClick={(e) => { e.stopPropagation(); setExpandedInbox(!expandedInbox) }} className="ml-auto p-2 -mr-2">
                     {expandedInbox ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </button>
                 </button>
                 {expandedInbox && (
                   <div className="ml-6 mt-1 space-y-1 border-l border-border pl-4">
                     {INBOX_SUBCATEGORIES.map((sub) => (
-                      <button key={sub} onClick={() => onSelectFolder('INBOX', sub)} className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors text-sm ${isActive('subfolder', 'INBOX', sub) ? 'bg-primary text-primary-foreground font-medium' : 'text-foreground hover:bg-muted'}`}>
+                      <button key={sub} onClick={() => onSelectFolder('INBOX', sub)} className={`w-full text-left px-3 py-3 md:py-1.5 rounded-lg transition-colors text-sm min-h-[44px] md:min-h-0 ${isActive('subfolder', 'INBOX', sub) ? 'bg-primary text-primary-foreground font-medium' : 'text-foreground hover:bg-muted'}`}>
                         {sub}
                       </button>
                     ))}
@@ -68,7 +68,7 @@ export default function FolderNav({ selection, onSelectFolder, onSelectLabel, la
             )
           }
           return (
-            <button key={label.id} onClick={() => onSelectFolder(label.name)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm ${isActive('folder', label.name) ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'}`}>
+            <button key={label.id} onClick={() => onSelectFolder(label.name)} className={`w-full flex items-center gap-3 px-3 py-3 md:py-2 rounded-lg transition-colors text-sm min-h-[44px] md:min-h-0 ${isActive('folder', label.name) ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'}`}>
               <Folder className="w-4 h-4" />{label.name}
             </button>
           )
@@ -79,7 +79,7 @@ export default function FolderNav({ selection, onSelectFolder, onSelectLabel, la
       <nav className="space-y-1">
         {loading ? <div className="flex justify-center p-4"><Loader2 className="w-4 h-4 animate-spin"/></div> :
         userLabels.map((label) => (
-          <button key={label.id} onClick={() => onSelectLabel(label.name)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm ${isActive('label', label.name) ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'}`}>
+          <button key={label.id} onClick={() => onSelectLabel(label.name)} className={`w-full flex items-center gap-3 px-3 py-3 md:py-2 rounded-lg transition-colors text-sm min-h-[44px] md:min-h-0 ${isActive('label', label.name) ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'}`}>
             <Tag className="w-4 h-4" />{label.name}
           </button>
         ))}

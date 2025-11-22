@@ -85,20 +85,22 @@ export default function EmailList({
           emails.map((email: Email) => (
             <div
               key={email.id}
-              className={`px-6 py-4 hover:bg-muted transition-colors flex items-start gap-4 cursor-pointer group ${email.is_unread ? 'bg-muted/30' : ''}`}
+              className={`px-4 py-4 md:px-6 hover:bg-muted transition-colors flex items-start gap-3 md:gap-4 cursor-pointer group ${email.is_unread ? 'bg-muted/30' : ''}`}
               onClick={() => onOpenEmail(email.id)}
             >
-              <Checkbox
-                checked={selectedEmails.has(email.id) || isAllMatchingSelected}
-                onCheckedChange={() => onSelectEmail(email.id)}
-                onClick={(e) => e.stopPropagation()}
-              />
+              <div className="pt-1">
+                <Checkbox
+                  checked={selectedEmails.has(email.id) || isAllMatchingSelected}
+                  onCheckedChange={() => onSelectEmail(email.id)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-1 gap-1">
                   <span className={`font-medium text-foreground truncate ${email.is_unread ? 'font-bold' : ''}`}>
                     {email.sender}
                   </span>
-                  <span className={`text-xs text-muted-foreground whitespace-nowrap ml-2 ${email.is_unread ? 'font-bold text-foreground' : ''}`}>
+                  <span className={`text-xs text-muted-foreground whitespace-nowrap ${email.is_unread ? 'font-bold text-foreground' : ''}`}>
                     {email.date}
                   </span>
                 </div>

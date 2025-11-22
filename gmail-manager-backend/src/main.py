@@ -318,7 +318,8 @@ def get_dashboard_subjects(
         label_ids.append('CATEGORY_PERSONAL')
 
     try:
-        counts = gmail_service.get_subject_counts(label_ids=label_ids)
+        # Limit to 500 for performance
+        counts = gmail_service.get_subject_counts(label_ids=label_ids, limit=500)
         return {"subjects": counts}
     except Exception as e:
         logging.error(f"Error in get_dashboard_subjects: {e}", exc_info=True)

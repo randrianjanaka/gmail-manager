@@ -33,7 +33,7 @@ interface SubjectCount {
   count: number
 }
 
-const API_BASE = 'http://127.0.0.1:8000'
+const API_BASE = '/api'
 
 export default function Dashboard({ allLabels = [] }: DashboardProps) {
   const [stats, setStats] = useState({ total_emails: 0, unread_emails: 0 })
@@ -162,7 +162,7 @@ export default function Dashboard({ allLabels = [] }: DashboardProps) {
         {/* Subject Analysis */}
         <div className="bg-card border border-border rounded-lg p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-foreground">Top Subjects (Last 1000 Emails)</h3>
+            <h3 className="text-lg font-semibold text-foreground">Top Subjects (Last 500 Emails)</h3>
             <div className="flex gap-2">
               <Select defaultValue="INBOX-Primary" onValueChange={(val) => console.log("Filter:", val)}>
                 <SelectTrigger className="w-[180px]">

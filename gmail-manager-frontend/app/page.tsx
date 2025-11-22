@@ -26,7 +26,7 @@ import {
     AlertDialogTitle,
   } from "@/components/ui/alert-dialog"
 
-const API_BASE = 'http://127.0.0.1:8000'
+const API_BASE = '/api'
 const BATCH_CHUNK_SIZE = 20; // Number of emails to process per frontend request
 
 interface EmailResponse {
@@ -624,7 +624,10 @@ function HomeContent() {
       {showEmailModal && selectedEmailId && (
         <EmailContentModal
           emailId={selectedEmailId}
-          onClose={() => setShowEmailModal(false)}
+          onClose={() => {
+            setShowEmailModal(false)
+            setSelectedEmailId(null)
+          }}
           onAssignLabel={() => setShowLabelModal(true)}
           onRefresh={fetchEmails}
         />

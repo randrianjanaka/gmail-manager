@@ -38,7 +38,7 @@ We are building a clean, modern, and intuitive web interface to interact with a 
 ## 3. Technical & Design Guidelines
 
 *   **Framework:** You have the freedom to choose a modern JavaScript framework like **React, Vue, or Svelte**.
-*   **API Consumption:** The frontend will be purely a client for the backend API. All data and actions are handled via HTTP requests. The base URL for the API will be `http://127.0.0.1:8000`.
+*   **API Consumption:** The frontend will be purely a client for the backend API. All data and actions are handled via HTTP requests. The base URL for the API will be `http://127.0.0.1:8123`.
 *   **Design:** The design should be clean, responsive, and user-friendly. A minimalist aesthetic is preferred.
 *   **State Management:** Use a robust state management solution (e.g., Redux, Vuex, Context API) to handle application state, especially for the email list and user selections.
 
@@ -51,4 +51,4 @@ We are building a clean, modern, and intuitive web interface to interact with a 
 *   `GET /dashboard/summary`: Gets placeholder data for the dashboard.
 *   `POST /alerts/custom`: Placeholder for creating custom alerts.
 
-The backend provides interactive API documentation at `http://127.0.0.1:8000/docs` where you can see detailed request/response models.
+The backend provides interactive API documentation at `http://127.0.0.1:8123/docs` where you can see detailed request/response models.

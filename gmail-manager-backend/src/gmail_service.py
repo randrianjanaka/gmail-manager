@@ -196,8 +196,8 @@ class GmailService:
                         "is_unread": 'UNREAD' in label_ids_list
                     }
 
-                # Reduced chunk size to 25 to prevent "Too many concurrent requests" errors
-                chunk_size = 25
+                # Reduced chunk size to 10 to strictly avoid concurrency limits
+                chunk_size = 10
                 for i in range(0, len(messages), chunk_size):
                     batch = self.service.new_batch_http_request(callback=batch_callback)
                     chunk = messages[i:i + chunk_size]
@@ -219,7 +219,7 @@ class GmailService:
                     try:
                         batch.execute()
                         # Add delay to respect rate limits
-                        time.sleep(0.5)
+                        time.sleep(0.1)
                     except Exception as e:
                         logging.error(f"Batch execution failed for list_emails chunk {i}: {e}")
 
@@ -505,7 +505,7 @@ class GmailService:
             logging.error(f"Error fetching dashboard stats: {e}", exc_info=True)
             return {"total_emails": 0, "unread_emails": 0}
 
-    def get_subject_counts(self, label_ids: list, limit: int = 1000) -> list:
+    def get_subject_counts(self, label_ids: list, limit: int = 200) -> list:
         """
         Aggregates subject counts for the given labels.
         Iterates through pages to get accurate counts, up to a limit.
@@ -548,8 +548,8 @@ class GmailService:
                 
                 if messages:
                     # 2. Batch fetch headers for these messages
-                    # Batch size 20 for stability (avoid 429 concurrent requests)
-                    chunk_size = 20
+                    # Batch size 10 for stability
+                    chunk_size = 10
                     
                     # If adding this chunk exceeds limit, truncate
                     if limit and (total_processed + len(messages)) > limit:
@@ -570,7 +570,7 @@ class GmailService:
                             )
                         try:
                             batch.execute()
-                            time.sleep(1.0) # Increased delay between batches
+                            time.sleep(0.1) # Short delay for smaller batches
                         except Exception as e:
                             logging.error(f"Batch execution failed during subject count: {e}")
                     
@@ -616,8 +616,8 @@ class GmailService:
             unread_emails = self._count_messages(query="is:unread", label_ids=label_ids)
             
             # 3. Subject Analysis (Limited)
-            # Only analyze the most recent 1000 emails to keep it fast.
-            subjects_list = self.get_subject_counts(label_ids=label_ids, limit=1000)
+            # Only analyze the most recent 200 emails to keep it fast and avoid rate limits.
+            subjects_list = self.get_subject_counts(label_ids=label_ids, limit=200)
             
             return {
                 "total_emails": total_emails,

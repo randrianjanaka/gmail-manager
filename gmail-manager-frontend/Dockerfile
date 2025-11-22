@@ -1,5 +1,5 @@
 # Use an official Node runtime as a parent image
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Set the working directory
 WORKDIR /app
@@ -19,8 +19,8 @@ COPY . .
 # Build the application
 RUN pnpm build
 
-# Expose port 3000
-EXPOSE 3000
+# Expose port 3123
+EXPOSE 3123
 
 # Start the application
 CMD ["pnpm", "start"]

@@ -13,4 +13,4 @@ CREDENTIALS_FILE = 'credentials.json'
 TOKEN_FILE = 'token.json'
 
 # Frontend URL for CORS
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3123")

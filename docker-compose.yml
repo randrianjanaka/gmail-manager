@@ -4,20 +4,28 @@ services:
       context: ./gmail-manager-backend
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8123:8123"
     volumes:
       - ./gmail-manager-backend:/app
     environment:
       - PYTHONUNBUFFERED=1
     # Add other environment variables here if needed
+    networks:
+      - gmail-net
 
   frontend:
     build:
       context: ./gmail-manager-frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3123:3123"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - API_URL=http://backend:8123
     depends_on:
       - backend
+    networks:
+      - gmail-net
+
+networks:
+  gmail-net:
+    driver: bridge

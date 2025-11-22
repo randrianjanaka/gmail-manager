@@ -67,7 +67,7 @@ Follow these steps to get both the backend and frontend running locally.
     ```bash
     uvicorn src.main:app --reload
     ```
-    The server will be running at `http://127.0.0.1:8000`.
+    The server will be running at `http://127.0.0.1:8123`.
 
 5.  **First-time Authentication:**
     -   The very first time the frontend makes an API call, the backend will detect that you are not authenticated.
@@ -93,9 +93,9 @@ Follow these steps to get both the backend and frontend running locally.
     ```bash
     pnpm dev
     ```
-    The frontend will be running at `http://localhost:3000`.
+    The frontend will be running at `http://localhost:3123`.
 
 ### Step 4: Access the Application
 
--   Open your browser and go to **`http://localhost:3000`**.
--   The frontend interface will load and will start making requests to your backend server running on port 8000.
+-   Open your browser and go to **`http://localhost:3123`**.
+-   The frontend interface will load and will start making requests to your backend server running on port 8123.

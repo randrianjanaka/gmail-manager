@@ -5,9 +5,9 @@
   "packageManager": "pnpm@9.9.0",
   "scripts": {
     "build": "next build",
-    "dev": "next dev",
+    "dev": "next dev -p 3123",
     "lint": "eslint .",
-    "start": "next start"
+    "start": "next start -p 3123"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

@@ -1,6 +1,6 @@
 'use client'
 
-import { Archive, Tag, Trash2, MailOpen, Mail } from 'lucide-react'
+import { Archive, Tag, Trash2, MailOpen, Mail, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface EmailActionsProps {
@@ -10,6 +10,7 @@ interface EmailActionsProps {
   onMoveToTrash: () => void
   onMarkRead: () => void
   onMarkUnread: () => void
+  onViewSubjects: () => void
 }
 
 export default function EmailActions({
@@ -18,7 +19,8 @@ export default function EmailActions({
   onAssignLabels,
   onMoveToTrash,
   onMarkRead,
-  onMarkUnread
+  onMarkUnread,
+  onViewSubjects
 }: EmailActionsProps) {
   return (
     <div className="mb-6 p-4 bg-muted rounded-lg border border-border flex items-center justify-between flex-wrap gap-4">
@@ -26,6 +28,15 @@ export default function EmailActions({
         {selectedCount} email{selectedCount !== 1 ? 's' : ''} selected
       </span>
       <div className="flex items-center gap-2 flex-wrap">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onViewSubjects}
+          className="flex items-center gap-2"
+          title="View unique subjects"
+        >
+          <Eye className="w-4 h-4" />
+        </Button>
         <Button
           size="sm"
           variant="outline"

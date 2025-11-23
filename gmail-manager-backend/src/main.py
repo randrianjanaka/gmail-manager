@@ -75,6 +75,8 @@ def list_emails(
         "PRIMARY": "CATEGORY_PERSONAL",
         "PROMOTIONS": "CATEGORY_PROMOTIONS",
         "SOCIAL": "CATEGORY_SOCIAL",
+        "NOTIFICATIONS": "CATEGORY_UPDATES",
+        "FORUMS": "CATEGORY_FORUMS",
     }
     
     if label:
@@ -124,6 +126,8 @@ def list_email_ids(
         "PRIMARY": "CATEGORY_PERSONAL",
         "PROMOTIONS": "CATEGORY_PROMOTIONS",
         "SOCIAL": "CATEGORY_SOCIAL",
+        "NOTIFICATIONS": "CATEGORY_UPDATES",
+        "FORUMS": "CATEGORY_FORUMS",
     }
     
     if label:
@@ -186,6 +190,8 @@ def get_unique_subjects(
         "PRIMARY": "CATEGORY_PERSONAL",
         "PROMOTIONS": "CATEGORY_PROMOTIONS",
         "SOCIAL": "CATEGORY_SOCIAL",
+        "NOTIFICATIONS": "CATEGORY_UPDATES",
+        "FORUMS": "CATEGORY_FORUMS",
     }
 
     if label:
@@ -298,6 +304,8 @@ def get_dashboard_subjects(
         "PRIMARY": "CATEGORY_PERSONAL",
         "PROMOTIONS": "CATEGORY_PROMOTIONS",
         "SOCIAL": "CATEGORY_SOCIAL",
+        "NOTIFICATIONS": "CATEGORY_UPDATES",
+        "FORUMS": "CATEGORY_FORUMS",
     }
 
     if label:

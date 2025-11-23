@@ -13,11 +13,13 @@ interface Selection {
 interface SubjectsModalProps {
   selection: Selection
   onClose: () => void
+  preloadedSubjects?: string[]
+  title?: string
 }
 
 const API_BASE = '/api'
 
-export default function SubjectsModal({ selection, onClose }: SubjectsModalProps) {
+export default function SubjectsModal({ selection, onClose, preloadedSubjects, title }: SubjectsModalProps) {
   const [subjects, setSubjects] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -32,8 +34,13 @@ export default function SubjectsModal({ selection, onClose }: SubjectsModalProps
   }, [onClose]);
 
   useEffect(() => {
-    fetchSubjects()
-  }, [selection])
+    if (preloadedSubjects) {
+      setSubjects(preloadedSubjects)
+      setLoading(false)
+    } else {
+      fetchSubjects()
+    }
+  }, [selection, preloadedSubjects])
 
   const fetchSubjects = async () => {
     setLoading(true)
@@ -68,7 +75,7 @@ export default function SubjectsModal({ selection, onClose }: SubjectsModalProps
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <h2 className="text-lg font-bold text-foreground">
-            Unique Subjects in {selection.name} {selection.subfolder ? `(${selection.subfolder})` : ''}
+            {title || `Unique Subjects in ${selection.name} ${selection.subfolder ? `(${selection.subfolder})` : ''}`}
           </h2>
           <button
             onClick={onClose}

@@ -14,6 +14,7 @@ import SubjectsModal from '@/components/subjects-modal'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { Progress } from '@/components/ui/progress'
 import {
     AlertDialog,
@@ -78,6 +79,7 @@ function HomeContent() {
   const [allLabels, setAllLabels] = useState<Label[]>([]);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [idsToArchive, setIdsToArchive] = useState<string[] | null>(null);
+  const [selectedEmailSubjects, setSelectedEmailSubjects] = useState<string[]>([]);
   const [progress, setProgress] = useState<ProgressState | null>(null);
   
   // Pagination state
@@ -435,6 +437,34 @@ function HomeContent() {
     setShowEmailModal(true)
   }
 
+  const handleViewSelectedSubjects = () => {
+    const subjects = new Set<string>();
+
+    if (isAllMatchingSelected) {
+      // In "All Matching" mode, we can't easily get all subjects without fetching.
+      // For now, we'll just show subjects from the current page that are selected (which is all of them)
+      // OR we could disable this button for "All Matching".
+      // Let's stick to current page for simplicity as per requirement "avoid fetching again".
+      emails.forEach(email => {
+        if (email.subject) subjects.add(email.subject);
+      });
+    } else {
+      // Iterate through selected IDs and find them in the current emails list
+      // Note: This only works for emails currently loaded in memory (current page).
+      // If selection spans multiple pages (not possible with current UI except "All Matching"), 
+      // we would miss them. But current UI clears selection on page change unless "All Matching".
+      selectedEmails.forEach(id => {
+        const email = emails.find(e => e.id === id);
+        if (email && email.subject) {
+          subjects.add(email.subject);
+        }
+      });
+    }
+
+    setSelectedEmailSubjects(Array.from(subjects));
+    setShowSubjectsModal(true);
+  }
+
   const handleNextPage = () => {
     if (nextPageToken) {
       setPageTokens(prev => [...prev, nextPageToken]);
@@ -518,12 +548,13 @@ function HomeContent() {
           <Mail className="w-6 h-6 text-primary" />
           <h1 className="text-xl font-bold text-foreground">Gmail</h1>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </Button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </Button>
+        </div>
       </div>
-
-
 
       {/* Sidebar */}
       <aside className={`
@@ -535,9 +566,14 @@ function HomeContent() {
             <Mail className="w-6 h-6 text-primary" />
             <h1 className="text-xl font-bold text-foreground">Gmail</h1>
           </div>
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMobileMenuOpen(false)}>
-            <X className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <div className="md:block hidden">
+              <ThemeToggle />
+            </div>
+            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMobileMenuOpen(false)}>
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -584,6 +620,7 @@ function HomeContent() {
                 onMoveToTrash={() => performActionOnSelected('trash')}
                 onMarkRead={() => performActionOnSelected('mark_read')}
                 onMarkUnread={() => performActionOnSelected('mark_unread')}
+                  onViewSubjects={handleViewSelectedSubjects}
               />
             )}
 
@@ -638,7 +675,12 @@ function HomeContent() {
       {showSubjectsModal && (
         <SubjectsModal
           selection={selection}
-          onClose={() => setShowSubjectsModal(false)}
+          onClose={() => {
+            setShowSubjectsModal(false)
+            setSelectedEmailSubjects([])
+          }}
+          preloadedSubjects={selectedEmailSubjects.length > 0 ? selectedEmailSubjects : undefined}
+          title={selectedEmailSubjects.length > 0 ? "Unique Subjects in Selection" : undefined}
         />
       )}
 

@@ -24,7 +24,7 @@ interface FolderNavProps {
 }
 
 const SYSTEM_FOLDERS_ORDER = ['INBOX', 'SENT', 'SPAM', 'TRASH'];
-const INBOX_SUBCATEGORIES = ['Primary', 'Promotions', 'Social'];
+const INBOX_SUBCATEGORIES = ['Primary', 'Promotions', 'Social', 'Notifications', 'Forums'];
 
 export default function FolderNav({ selection, onSelectFolder, onSelectLabel, labels, loading }: FolderNavProps) {
   const [expandedInbox, setExpandedInbox] = useState(true);

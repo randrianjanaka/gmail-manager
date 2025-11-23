@@ -174,6 +174,8 @@ export default function Dashboard({ allLabels = [] }: DashboardProps) {
                     <SelectItem value="INBOX-Primary">Inbox (Primary)</SelectItem>
                     <SelectItem value="INBOX-Promotions">Inbox (Promotions)</SelectItem>
                     <SelectItem value="INBOX-Social">Inbox (Social)</SelectItem>
+                    <SelectItem value="INBOX-Notifications">Inbox (Notifications)</SelectItem>
+                    <SelectItem value="INBOX-Forums">Inbox (Forums)</SelectItem>
                   </SelectGroup>
                   <SelectSeparator />
                   <SelectGroup>

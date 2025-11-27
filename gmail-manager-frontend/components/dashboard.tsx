@@ -160,7 +160,7 @@ export default function Dashboard({ allLabels = [] }: DashboardProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Subject Analysis */}
-        <div className="bg-card border border-border rounded-lg p-6">
+        <div className="bg-card border border-border rounded-lg p-6 col-span-1 md:col-span-2">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-foreground">Top Subjects (Last 500 Emails)</h3>
             <div className="flex gap-2">

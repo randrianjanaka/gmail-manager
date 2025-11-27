@@ -524,9 +524,11 @@ class GmailService:
                     return
                 
                 headers = response.get('payload', {}).get('headers', [])
-                subject = next((h['value'] for h in headers if h['name'] == 'Subject'), 'No Subject')
-                if subject:
-                    subject_counts[subject] = subject_counts.get(subject, 0) + 1
+                subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '(No Subject)')
+                if not subject:
+                    subject = '(No Subject)'
+                
+                subject_counts[subject] = subject_counts.get(subject, 0) + 1
 
             while True:
                 # Check limit

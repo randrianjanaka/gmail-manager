@@ -515,10 +515,12 @@ class GmailService:
             subject_counts = {}
             page_token = None
             total_processed = 0
+            successfully_counted = 0  # Track actual successful fetches
             service = self._get_gmail_service() # Use new service instance
             
             # Batch request callback
             def batch_callback(request_id, response, exception):
+                nonlocal successfully_counted
                 if exception:
                     logging.warning(f"Error fetching headers for msg {request_id}: {exception}")
                     return
@@ -529,10 +531,12 @@ class GmailService:
                     subject = '(No Subject)'
                 
                 subject_counts[subject] = subject_counts.get(subject, 0) + 1
+                successfully_counted += 1
 
             while True:
                 # Check limit
-                if limit and total_processed >= limit:
+                if limit and successfully_counted >= limit:
+                    logging.info(f"Reached target of {limit} successfully counted subjects.")
                     break
 
                 # 1. List IDs for current page
@@ -554,21 +558,24 @@ class GmailService:
                     chunk_size = 10
                     
                     # If adding this chunk exceeds limit, truncate
-                    if limit and (total_processed + len(messages)) > limit:
-                        messages = messages[:limit - total_processed]
+                    remaining_needed = limit - successfully_counted if limit else len(messages)
+                    if limit and len(messages) > remaining_needed:
+                        messages = messages[:remaining_needed]
+                        logging.info(f"Limiting to {len(messages)} messages to reach target of {limit}")
 
                     for i in range(0, len(messages), chunk_size):
                         chunk = messages[i:i + chunk_size]
                         batch = service.new_batch_http_request(callback=batch_callback)
                         
-                        for msg in chunk:
+                        for j, msg in enumerate(chunk):
                             batch.add(
                                 service.users().messages().get(
                                     userId='me', 
                                     id=msg['id'], 
                                     format='metadata', 
                                     metadataHeaders=['Subject']
-                                )
+                                ),
+                                request_id=f"{total_processed + i + j}"
                             )
                         try:
                             batch.execute()
@@ -577,14 +584,17 @@ class GmailService:
                             logging.error(f"Batch execution failed during subject count: {e}")
                     
                     total_processed += len(messages)
+                    logging.info(f"Processed {total_processed} messages, successfully counted {successfully_counted} subjects")
 
                 page_token = results.get('nextPageToken')
                 if not page_token:
+                    logging.info("No more pages available")
                     break
                 
                 # Small delay between pages
                 time.sleep(0.1)
             
+            logging.info(f"Final stats: Processed {total_processed} messages, successfully counted {successfully_counted} subjects, unique subjects: {len(subject_counts)}")
             # Convert to list of dicts
             result = [
                 {"subject": subj, "count": count} 

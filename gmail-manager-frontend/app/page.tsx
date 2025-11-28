@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Mail, Loader2, Eye, Menu, X } from 'lucide-react'
+import { Mail, Loader2, Eye, Menu, X, PanelLeft } from 'lucide-react'
 import Dashboard from '@/components/dashboard'
 import FolderNav from '@/components/folder-nav'
 import EmailList from '@/components/email-list'
@@ -538,6 +538,7 @@ function HomeContent() {
   const currentEnd = currentStart + emails.length - 1;
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
     <div className="flex h-screen bg-background relative flex-col md:flex-row">
@@ -558,8 +559,9 @@ function HomeContent() {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card flex-col h-full transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:flex
+        fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card flex-col h-full transition-transform duration-300 ease-in-out md:static
         ${isMobileMenuOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'}
+        ${isSidebarOpen ? 'md:flex md:translate-x-0' : 'md:hidden'}
       `}>
         <div className="p-6 border-b border-border shrink-0 flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -596,6 +598,11 @@ function HomeContent() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto flex flex-col">
+        <div className="p-2 border-b border-border flex items-center gap-2 bg-card shrink-0 hidden md:flex">
+          <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)} title="Toggle Sidebar">
+            <PanelLeft className="w-5 h-5" />
+          </Button>
+        </div>
         {currentView === 'dashboard' ? (
           <Dashboard allLabels={allLabels} />
         ) : (

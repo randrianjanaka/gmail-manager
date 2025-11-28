@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { X, Search, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -25,6 +25,14 @@ export default function LabelModal({ onClose, onAssign, allLabels = [], loading 
   const [selectedLabels, setSelectedLabels] = useState<Set<string>>(new Set())
   const [searchTerm, setSearchTerm] = useState('')
   const [recentLabels, setRecentLabels] = useState<string[]>([])
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    // Focus the search input when the modal mounts
+    if (searchInputRef.current) {
+      searchInputRef.current.focus()
+    }
+  }, [])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -102,6 +110,7 @@ export default function LabelModal({ onClose, onAssign, allLabels = [], loading 
           <div className="relative">
              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
              <Input 
+              ref={searchInputRef}
                 placeholder="Search labels..." 
                 className="pl-8"
                 value={searchTerm}

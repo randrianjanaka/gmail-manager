@@ -42,11 +42,7 @@ export default function Dashboard({ allLabels = [] }: DashboardProps) {
   const [loadingSubjects, setLoadingSubjects] = useState(false)
   const [showLoadPrompt, setShowLoadPrompt] = useState(false)
   const [hasLoaded, setHasLoaded] = useState(false)
-
-  // We don't use selectedFolder/Subfolder for filtering anymore in this simplified view
-  // but keeping them if we want to re-add filtering later.
-  // const [selectedFolder, setSelectedFolder] = useState('INBOX')
-  // const [selectedSubfolder, setSelectedSubfolder] = useState('Primary')
+  const [currentFilter, setCurrentFilter] = useState('INBOX-Primary')
 
   const { addTask, removeTask } = useTasks();
 
@@ -59,7 +55,7 @@ export default function Dashboard({ allLabels = [] }: DashboardProps) {
 
   const handleConfirmLoad = () => {
     setShowLoadPrompt(false)
-    loadDashboardData()
+    loadDashboardData(currentFilter)
   }
 
   const handleCancelLoad = () => {
@@ -68,12 +64,33 @@ export default function Dashboard({ allLabels = [] }: DashboardProps) {
     setLoadingStats(false)
   }
 
-  const loadDashboardData = () => {
+  const handleFilterChange = (value: string) => {
+    setCurrentFilter(value)
+    if (hasLoaded) {
+      loadDashboardData(value)
+    }
+  }
+
+  const loadDashboardData = (filterValue: string) => {
     setHasLoaded(true)
     setLoadingStats(true)
     setLoadingSubjects(true)
 
-    // 1. Fetch Stats (Fast)
+    // Construct query params based on filter
+    const params = new URLSearchParams()
+    if (filterValue.startsWith('INBOX-')) {
+      params.append('folder', 'INBOX')
+      params.append('inbox_filter', filterValue.split('-')[1])
+    } else if (['SENT', 'TRASH', 'SPAM'].includes(filterValue)) {
+      params.append('folder', filterValue)
+    } else {
+      // Assume it's a label
+      params.append('label', filterValue)
+    }
+
+    // 1. Fetch Stats (Fast) - Note: Summary endpoint might need params too if we want stats per folder
+    // For now, summary is hardcoded to Primary Inbox in backend, so we might want to update backend too or just accept it.
+    // Let's assume summary is global/primary for now as per backend code.
     fetch(`${API_BASE}/dashboard/summary`)
       .then(res => res.json())
       .then(data => {
@@ -88,7 +105,7 @@ export default function Dashboard({ allLabels = [] }: DashboardProps) {
     // 2. Fetch Subjects (Slower)
     const controller = new AbortController()
 
-    fetch(`${API_BASE}/dashboard/subjects`, { signal: controller.signal })
+    fetch(`${API_BASE}/dashboard/subjects?${params.toString()}`, { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         setSubjectCounts(data.subjects || [])
@@ -123,7 +140,7 @@ export default function Dashboard({ allLabels = [] }: DashboardProps) {
       <div>
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <Button onClick={loadDashboardData} variant="outline" size="sm" disabled={loadingStats}>
+          <Button onClick={() => loadDashboardData(currentFilter)} variant="outline" size="sm" disabled={loadingStats}>
             {loadingStats ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Refresh Data
           </Button>
@@ -164,7 +181,7 @@ export default function Dashboard({ allLabels = [] }: DashboardProps) {
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-foreground">Top Subjects (Last 500 Emails)</h3>
             <div className="flex gap-2">
-              <Select defaultValue="INBOX-Primary" onValueChange={(val) => console.log("Filter:", val)}>
+              <Select value={currentFilter} onValueChange={handleFilterChange}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Select View" />
                 </SelectTrigger>
@@ -217,7 +234,7 @@ export default function Dashboard({ allLabels = [] }: DashboardProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {subjectCounts.slice(0, 10).map((subject, idx) => (
+                    {subjectCounts.slice(0, 20).map((subject, idx) => (
                     <tr key={idx} className="border-b border-border hover:bg-muted/50 transition-colors">
                       <td className="px-4 py-3 font-medium text-foreground truncate max-w-md" title={subject.subject}>
                         {subject.subject}
@@ -236,6 +253,12 @@ export default function Dashboard({ allLabels = [] }: DashboardProps) {
                   )}
                 </tbody>
               </table>
+                {subjectCounts.length > 0 && (
+                  <div className="mt-4 text-xs text-center text-muted-foreground">
+                    Showing top {Math.min(20, subjectCounts.length)} subjects.
+                    Note: Counts are based on the last 500 emails in this view.
+                  </div>
+                )}
             </div>
           )}
         </div>

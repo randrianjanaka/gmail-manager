@@ -20,4 +20,5 @@ EXPOSE 8123
 ENV PYTHONUNBUFFERED=1
 
 # Run app.py when the container launches
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8123"]
+# Run tests and then the app
+CMD ["sh", "-c", "python run_tests.py && uvicorn src.main:app --host 0.0.0.0 --port 8123"]

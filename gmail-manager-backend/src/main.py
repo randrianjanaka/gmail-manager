@@ -7,7 +7,8 @@ from typing import List, Optional
 from .schemas import (
     EmailListResponse, UniqueSubjectsResponse, ModifyLabelsRequest,
     LabelListResponse, EmailDetails, BatchActionRequest, EmailIdListResponse,
-    SubjectCountListResponse, FullDashboardResponse
+    SubjectCountListResponse, FullDashboardResponse,
+    Filter, FilterCreateRequest, FilterResponse, FilterCriteria, FilterAction
 )
 from .gmail_service import GmailService
 from .config import FRONTEND_URL
@@ -353,3 +354,61 @@ def create_custom_alert():
     Placeholder endpoint for creating custom alerts.
     """
     raise HTTPException(status_code=501, detail="Feature not implemented yet.")
+
+# --- Filter Endpoints ---
+
+@app.get("/api/filters", response_model=FilterResponse, tags=["Filters"])
+def list_filters():
+    """
+    Lists all user's filters.
+    """
+    try:
+        filters = gmail_service.list_filters()
+        return {"filters": filters}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/filters/{filter_id}", response_model=Filter, tags=["Filters"])
+def get_filter(filter_id: str):
+    """
+    Gets a specific filter.
+    """
+    try:
+        return gmail_service.get_filter(filter_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/filters", response_model=Filter, tags=["Filters"])
+def create_filter(filter_request: FilterCreateRequest):
+    """
+    Creates a new filter. 
+    Note: Gmail API expects specific format for criteria and action.
+    We convert our Pydantic model to the dict expected by Gmail API.
+    """
+    try:
+        # Convert Pydantic model to dict, filtering out None values
+        filter_obj = filter_request.dict(exclude_none=True, by_alias=True)
+        
+        # Ensure 'criteria' and 'action' keys exist even if empty
+        if 'criteria' not in filter_obj: filter_obj['criteria'] = {}
+        if 'action' not in filter_obj: filter_obj['action'] = {}
+
+        created_filter = gmail_service.create_filter(filter_obj)
+        return created_filter
+    except Exception as e:
+        logging.error(f"Error creating filter: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/filters/{filter_id}", tags=["Filters"])
+def delete_filter(filter_id: str):
+    """
+    Deletes a filter.
+    """
+    try:
+        gmail_service.delete_filter(filter_id)
+        return {"status": "success", "message": f"Filter {filter_id} deleted."}
+    except Exception as e:
+        logging.error(f"Error deleting filter: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))

@@ -11,21 +11,24 @@ import FiltersPanel, { FilterValues } from '@/components/filters-panel'
 import PaginationControls from '@/components/pagination-controls'
 import EmailContentModal from '@/components/email-content-modal'
 import SubjectsModal from '@/components/subjects-modal'
+import FiltersPage from '@/components/filters-page'
+import FilterModal, { FilterData } from '@/components/filter-modal'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Progress } from '@/components/ui/progress'
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-  } from "@/components/ui/alert-dialog"
+
 
 const API_BASE = '/api'
 const BATCH_CHUNK_SIZE = 20; // Number of emails to process per frontend request
@@ -65,12 +68,18 @@ export default function Home() {
 }
 
 function HomeContent() {
-  const [currentView, setCurrentView] = useState<'dashboard' | 'emails'>('dashboard')
+  const [currentView, setCurrentView] = useState<'dashboard' | 'emails' | 'filters'>('dashboard')
   const [selection, setSelection] = useState<{ type: 'folder' | 'label', name: string, subfolder?: string }>({ type: 'folder', name: 'INBOX', subfolder: 'Primary' });
   const [emails, setEmails] = useState<any[]>([])
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set())
   const [isAllMatchingSelected, setIsAllMatchingSelected] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  // Filter Creation Logic
+  const [showFilterPrompt, setShowFilterPrompt] = useState(false)
+  const [showCreateFilterModal, setShowCreateFilterModal] = useState(false)
+  const [suggestedFilter, setSuggestedFilter] = useState<FilterData | undefined>(undefined)
+
   const [loadingLabels, setLoadingLabels] = useState(true)
   const [showLabelModal, setShowLabelModal] = useState(false)
   const [showSubjectsModal, setShowSubjectsModal] = useState(false)
@@ -582,6 +591,7 @@ function HomeContent() {
           <nav className="p-4 space-y-2">
             <button onClick={() => setCurrentView('dashboard')} className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${currentView === 'dashboard' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-foreground'}`}>Dashboard</button>
             <button onClick={() => setCurrentView('emails')} className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${currentView === 'emails' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-foreground'}`}>Emails</button>
+            <button onClick={() => setCurrentView('filters')} className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${currentView === 'filters' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-foreground'}`}>Filters</button>
           </nav>
 
           {currentView === 'emails' && (
@@ -605,6 +615,8 @@ function HomeContent() {
         </div>
         {currentView === 'dashboard' ? (
           <Dashboard allLabels={allLabels} />
+        ) : currentView === 'filters' ? (
+          <FiltersPage allLabels={allLabels} />
         ) : (
           <div className="p-6 flex-1 overflow-hidden flex flex-col">
             <div className="mb-6 flex justify-between items-center">
@@ -749,6 +761,87 @@ function HomeContent() {
           />
         )
       }
+      {/* Filter Prompt Dialog */}
+      <AlertDialog open={showFilterPrompt} onOpenChange={setShowFilterPrompt}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Automate this action?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Do you want to create a filter to always apply the label "{suggestedFilter?.action.addLabelIds?.[0] && allLabels.find(l => l.id === suggestedFilter.action.addLabelIds[0])?.name || "selected"}" 
+                    to emails from <strong>{suggestedFilter?.criteria.from}</strong>?
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setSuggestedFilter(undefined)}>No, thanks</AlertDialogCancel>
+                <AlertDialogAction onClick={() => { setShowFilterPrompt(false); setShowCreateFilterModal(true); }}>
+                    Yes, Create Filter
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Filter Creation Modal (from Prompt) */}
+      <FilterModal 
+        isOpen={showCreateFilterModal}
+        onClose={() => setShowCreateFilterModal(false)}
+        initialData={suggestedFilter}
+        allLabels={allLabels}
+        onSave={async (filter) => {
+            try {
+                const res = await fetch('/api/filters', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(filter)
+                });
+                if (!res.ok) throw new Error("Failed");
+                toast({ title: 'Success', description: 'Filter created.' });
+                // If we are currently on filters page, logic there handles refresh. 
+                // Since this modal is independent, we are good.
+            } catch (e) {
+                toast({ variant: 'destructive', title: 'Error', description: 'Failed to create filter.' });
+            }
+        }}
+      />
+
+      {/* Filter Prompt Dialog */}
+      <AlertDialog open={showFilterPrompt} onOpenChange={setShowFilterPrompt}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Automate this action?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Do you want to create a filter to always apply the label "{suggestedFilter?.action.addLabelIds?.[0] && allLabels.find(l => l.id === suggestedFilter.action.addLabelIds[0])?.name || "selected"}" 
+                    to emails from <strong>{suggestedFilter?.criteria.from}</strong>?
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setSuggestedFilter(undefined)}>No, thanks</AlertDialogCancel>
+                <AlertDialogAction onClick={() => { setShowFilterPrompt(false); setShowCreateFilterModal(true); }}>
+                    Yes, Create Filter
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Filter Creation Modal (from Prompt) */}
+      <FilterModal 
+        isOpen={showCreateFilterModal}
+        onClose={() => setShowCreateFilterModal(false)}
+        initialData={suggestedFilter}
+        allLabels={allLabels}
+        onSave={async (filter) => {
+            try {
+                const res = await fetch('/api/filters', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(filter)
+                });
+                if (!res.ok) throw new Error("Failed");
+                toast({ title: 'Success', description: 'Filter created.' });
+            } catch (e) {
+                toast({ variant: 'destructive', title: 'Error', description: 'Failed to create filter.' });
+            }
+        }}
+      />
     </div>
   )
 }

@@ -9,6 +9,7 @@ services:
       - ./gmail-manager-backend:/app
     environment:
       - PYTHONUNBUFFERED=1
+      - RUN_TESTS=true
     # Add other environment variables here if needed
     networks:
       - gmail-net

@@ -643,3 +643,38 @@ class GmailService:
                 "unread_emails": 0,
                 "subjects": []
             }
+
+    # --- Filter Management ---
+
+    def list_filters(self) -> list:
+        """Lists all user's filters."""
+        try:
+            result = self.service.users().settings().filters().list(userId='me').execute()
+            return result.get('filter', [])
+        except Exception as e:
+            logging.error(f"Error listing filters: {e}")
+            raise e
+
+    def get_filter(self, filter_id: str) -> dict:
+        """Gets a specific filter."""
+        try:
+            return self.service.users().settings().filters().get(userId='me', id=filter_id).execute()
+        except Exception as e:
+            logging.error(f"Error getting filter {filter_id}: {e}")
+            raise e
+
+    def create_filter(self, filter_obj: dict) -> dict:
+        """Creates a new filter."""
+        try:
+            return self.service.users().settings().filters().create(userId='me', body=filter_obj).execute()
+        except Exception as e:
+            logging.error(f"Error creating filter: {e}")
+            raise e
+
+    def delete_filter(self, filter_id: str):
+        """Deletes a filter."""
+        try:
+            self.service.users().settings().filters().delete(userId='me', id=filter_id).execute()
+        except Exception as e:
+            logging.error(f"Error deleting filter {filter_id}: {e}")
+            raise e

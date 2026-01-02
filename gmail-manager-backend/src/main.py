@@ -357,7 +357,7 @@ def create_custom_alert():
 
 # --- Filter Endpoints ---
 
-@app.get("/api/filters", response_model=FilterResponse, tags=["Filters"])
+@app.get("/api/filters", response_model=FilterResponse, tags=["Filters"], response_model_exclude_none=True)
 def list_filters():
     """
     Lists all user's filters.
@@ -370,7 +370,7 @@ def list_filters():
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/filters/{filter_id}", response_model=Filter, tags=["Filters"])
+@app.get("/api/filters/{filter_id}", response_model=Filter, tags=["Filters"], response_model_exclude_none=True)
 def get_filter(filter_id: str):
     """
     Gets a specific filter.
@@ -380,7 +380,7 @@ def get_filter(filter_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/filters", response_model=Filter, tags=["Filters"])
+@app.post("/api/filters", response_model=Filter, tags=["Filters"], response_model_exclude_none=True)
 def create_filter(filter_request: FilterCreateRequest):
     """
     Creates a new filter. 
@@ -389,7 +389,7 @@ def create_filter(filter_request: FilterCreateRequest):
     """
     try:
         # Convert Pydantic model to dict, filtering out None values
-        filter_obj = filter_request.dict(exclude_none=True, by_alias=True)
+        filter_obj = filter_request.model_dump(exclude_none=True, by_alias=True)
         
         # Ensure 'criteria' and 'action' keys exist even if empty
         if 'criteria' not in filter_obj: filter_obj['criteria'] = {}

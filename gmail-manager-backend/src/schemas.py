@@ -109,8 +109,8 @@ class FilterAction(BaseModel):
     # I will comment out the others for now or keep them as optional but they won't work with Gmail API unless processed.
     # I'll let frontend send the raw labels for now to keep backend simple (Pass-through).
     
-    add_label_ids: Optional[List[str]] = Field([], alias="addLabelIds")
-    remove_label_ids: Optional[List[str]] = Field([], alias="removeLabelIds")
+    add_label_ids: Optional[List[str]] = Field(None, alias="addLabelIds")
+    remove_label_ids: Optional[List[str]] = Field(None, alias="removeLabelIds")
     forward: Optional[str] = None
 
 class Filter(BaseModel):

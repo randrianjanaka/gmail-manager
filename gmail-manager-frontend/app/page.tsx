@@ -788,7 +788,7 @@ function HomeContent() {
         allLabels={allLabels}
         onSave={async (filter) => {
             try {
-                const res = await fetch('/api/filters', {
+                const res = await fetch(`${API_BASE}/filters`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(filter)
@@ -830,7 +830,7 @@ function HomeContent() {
         allLabels={allLabels}
         onSave={async (filter) => {
             try {
-                const res = await fetch('/api/filters', {
+                const res = await fetch(`${API_BASE}/filters`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(filter)

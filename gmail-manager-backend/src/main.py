@@ -1,6 +1,6 @@
 import os
 import logging
-from fastapi import FastAPI, HTTPException, Query, Body
+from fastapi import FastAPI, HTTPException, Query, Body, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 
@@ -42,7 +42,10 @@ app.add_middleware(
 # This will handle the authentication flow on the first API call.
 gmail_service = GmailService()
 
-@app.get("/labels", response_model=LabelListResponse, tags=["Labels"])
+# Create API Router with prefix
+router = APIRouter(prefix="/api")
+
+@router.get("/labels", response_model=LabelListResponse, tags=["Labels"])
 def get_all_user_labels():
     """
     Retrieves a list of all user-defined and system labels/folders.
@@ -54,7 +57,7 @@ def get_all_user_labels():
         logging.error(f"Error in get_all_user_labels: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to retrieve labels.")
 
-@app.get("/emails", response_model=EmailListResponse, tags=["Emails"])
+@router.get("/emails", response_model=EmailListResponse, tags=["Emails"])
 def list_emails(
     folder: Optional[str] = Query(None, description="A standard folder (e.g., INBOX, SENT)."),
     inbox_filter: Optional[str] = Query(None, description="Specific inbox category (e.g., Primary)."),
@@ -107,7 +110,7 @@ def list_emails(
         logging.error(f"Error in list_emails endpoint: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/emails/ids", response_model=EmailIdListResponse, tags=["Emails"])
+@router.get("/emails/ids", response_model=EmailIdListResponse, tags=["Emails"])
 def list_email_ids(
     folder: Optional[str] = Query(None),
     inbox_filter: Optional[str] = Query(None),
@@ -154,7 +157,7 @@ def list_email_ids(
         logging.error(f"Error in list_email_ids endpoint: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/emails/{email_id}", response_model=EmailDetails, tags=["Emails"])
+@router.get("/emails/{email_id}", response_model=EmailDetails, tags=["Emails"])
 def get_email_content(email_id: str):
     """
     Retrieves the full content and details of a single email.
@@ -168,7 +171,7 @@ def get_email_content(email_id: str):
         logging.error(f"Error getting content for email '{email_id}': {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to retrieve email content.")
 
-@app.post("/emails/{email_id}/trash", status_code=204, tags=["Actions"])
+@router.post("/emails/{email_id}/trash", status_code=204, tags=["Actions"])
 def trash_email(email_id: str):
     """
     Moves a specific email to the trash.
@@ -180,7 +183,7 @@ def trash_email(email_id: str):
         logging.error(f"Error in trash_email '{email_id}': {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to move email to trash.")
 
-@app.get("/subjects/unique", response_model=UniqueSubjectsResponse, tags=["Emails"])
+@router.get("/subjects/unique", response_model=UniqueSubjectsResponse, tags=["Emails"])
 def get_unique_subjects(
     folder: Optional[str] = Query(None),
     inbox_filter: Optional[str] = Query(None),
@@ -223,7 +226,7 @@ def get_unique_subjects(
         logging.error(f"Error in get_unique_subjects: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/emails/{email_id}/assign-labels", status_code=204, tags=["Actions"])
+@router.post("/emails/{email_id}/assign-labels", status_code=204, tags=["Actions"])
 def assign_labels_to_email(email_id: str, request: ModifyLabelsRequest):
     """
     Assigns or removes labels for a specific email using label names.
@@ -239,7 +242,7 @@ def assign_labels_to_email(email_id: str, request: ModifyLabelsRequest):
         logging.error(f"Error in assign_labels '{email_id}': {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/emails/{email_id}/archive", status_code=204, tags=["Actions"])
+@router.post("/emails/{email_id}/archive", status_code=204, tags=["Actions"])
 def archive_email(email_id: str):
     """
     Archives a specific email by removing the 'INBOX' label.
@@ -252,7 +255,7 @@ def archive_email(email_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/actions/batch", status_code=204, tags=["Actions"])
+@router.post("/actions/batch", status_code=204, tags=["Actions"])
 def perform_batch_action(request: BatchActionRequest):
     """
     Performs a batch action (archive, trash, assign labels) on selected emails.
@@ -277,7 +280,7 @@ def perform_batch_action(request: BatchActionRequest):
 
 # --- Placeholder Endpoints ---
 
-@app.get("/dashboard/summary", tags=["Dashboard"])
+@router.get("/dashboard/summary", tags=["Dashboard"])
 def get_dashboard_summary():
     """
     Placeholder endpoint for a future dashboard.
@@ -290,7 +293,7 @@ def get_dashboard_summary():
         "unread_emails": stats.get("unread_emails", 0)
     }
 
-@app.get("/dashboard/subjects", response_model=SubjectCountListResponse, tags=["Dashboard"])
+@router.get("/dashboard/subjects", response_model=SubjectCountListResponse, tags=["Dashboard"])
 def get_dashboard_subjects(
     folder: Optional[str] = Query(None),
     inbox_filter: Optional[str] = Query(None),
@@ -334,7 +337,7 @@ def get_dashboard_subjects(
         logging.error(f"Error in get_dashboard_subjects: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/dashboard/full", response_model=FullDashboardResponse, tags=["Dashboard"])
+@router.get("/dashboard/full", response_model=FullDashboardResponse, tags=["Dashboard"])
 def get_full_dashboard():
     """
     Retrieves all dashboard data (Total, Unread, Subjects) for INBOX -> Primary in one go.
@@ -348,7 +351,7 @@ def get_full_dashboard():
         logging.error(f"Error in get_full_dashboard: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/alerts/custom", tags=["Alerts"])
+@router.post("/alerts/custom", tags=["Alerts"])
 def create_custom_alert():
     """
     Placeholder endpoint for creating custom alerts.
@@ -357,7 +360,7 @@ def create_custom_alert():
 
 # --- Filter Endpoints ---
 
-@app.get("/api/filters", response_model=FilterResponse, tags=["Filters"], response_model_exclude_none=True)
+@router.get("/filters", response_model=FilterResponse, tags=["Filters"], response_model_exclude_none=True)
 def list_filters():
     """
     Lists all user's filters.
@@ -370,7 +373,7 @@ def list_filters():
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/filters/{filter_id}", response_model=Filter, tags=["Filters"], response_model_exclude_none=True)
+@router.get("/filters/{filter_id}", response_model=Filter, tags=["Filters"], response_model_exclude_none=True)
 def get_filter(filter_id: str):
     """
     Gets a specific filter.
@@ -380,7 +383,7 @@ def get_filter(filter_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/filters", response_model=Filter, tags=["Filters"], response_model_exclude_none=True)
+@router.post("/filters", response_model=Filter, tags=["Filters"], response_model_exclude_none=True)
 def create_filter(filter_request: FilterCreateRequest):
     """
     Creates a new filter. 
@@ -401,7 +404,7 @@ def create_filter(filter_request: FilterCreateRequest):
         logging.error(f"Error creating filter: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/api/filters/{filter_id}", tags=["Filters"])
+@router.delete("/filters/{filter_id}", tags=["Filters"])
 def delete_filter(filter_id: str):
     """
     Deletes a filter.
@@ -412,3 +415,5 @@ def delete_filter(filter_id: str):
     except Exception as e:
         logging.error(f"Error deleting filter: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+app.include_router(router)

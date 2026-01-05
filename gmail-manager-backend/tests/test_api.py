@@ -6,7 +6,7 @@ def test_list_filters_api(client, mock_gmail_service):
     mock_gmail_service.list_filters.return_value = [{'id': '1', 'criteria': {}, 'action': {}}]
     
     # Action
-    response = client.get("/api/filters")
+    response = client.get("/filters")
     
     # Assert
     assert response.status_code == 200
@@ -15,7 +15,7 @@ def test_list_filters_api(client, mock_gmail_service):
 def test_get_filter_api(client, mock_gmail_service):
     mock_gmail_service.get_filter.return_value = {'id': '1', 'criteria': {}, 'action': {}}
     
-    response = client.get("/api/filters/1")
+    response = client.get("/filters/1")
     
     assert response.status_code == 200
     assert response.json()['id'] == '1'
@@ -28,7 +28,7 @@ def test_create_filter_api(client, mock_gmail_service):
         "action": {"add_label_ids": ["LABEL_1"]}
     }
     
-    response = client.post("/api/filters", json=payload)
+    response = client.post("/filters", json=payload)
     
     assert response.status_code == 200
     assert response.json()['id'] == 'new'
@@ -49,6 +49,6 @@ def test_create_filter_api(client, mock_gmail_service):
     assert mock_gmail_service.create_filter.called
 
 def test_delete_filter_api(client, mock_gmail_service):
-    response = client.delete("/api/filters/123")
+    response = client.delete("/filters/123")
     assert response.status_code == 200
     mock_gmail_service.delete_filter.assert_called_with("123")

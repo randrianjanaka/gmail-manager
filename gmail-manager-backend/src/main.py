@@ -357,7 +357,7 @@ def create_custom_alert():
 
 # --- Filter Endpoints ---
 
-@app.get("/api/filters", response_model=FilterResponse, tags=["Filters"], response_model_exclude_none=True)
+@app.get("/filters", response_model=FilterResponse, tags=["Filters"], response_model_exclude_none=True)
 def list_filters():
     """
     Lists all user's filters.
@@ -370,7 +370,7 @@ def list_filters():
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/filters/{filter_id}", response_model=Filter, tags=["Filters"], response_model_exclude_none=True)
+@app.get("/filters/{filter_id}", response_model=Filter, tags=["Filters"], response_model_exclude_none=True)
 def get_filter(filter_id: str):
     """
     Gets a specific filter.
@@ -380,7 +380,7 @@ def get_filter(filter_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/filters", response_model=Filter, tags=["Filters"], response_model_exclude_none=True)
+@app.post("/filters", response_model=Filter, tags=["Filters"], response_model_exclude_none=True)
 def create_filter(filter_request: FilterCreateRequest):
     """
     Creates a new filter. 
@@ -401,7 +401,7 @@ def create_filter(filter_request: FilterCreateRequest):
         logging.error(f"Error creating filter: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/api/filters/{filter_id}", tags=["Filters"])
+@app.delete("/filters/{filter_id}", tags=["Filters"])
 def delete_filter(filter_id: str):
     """
     Deletes a filter.

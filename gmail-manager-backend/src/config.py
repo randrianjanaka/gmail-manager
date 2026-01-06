@@ -6,7 +6,10 @@ load_dotenv()
 
 # Defines the permissions the application will request from the user.
 # 'gmail.modify' is a broad scope that allows reading and modifying emails.
-SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
+SCOPES = [
+    'https://www.googleapis.com/auth/gmail.modify',
+    'https://www.googleapis.com/auth/gmail.settings.basic'
+]
 
 # File paths for Google API credentials.
 CREDENTIALS_FILE = 'credentials.json'

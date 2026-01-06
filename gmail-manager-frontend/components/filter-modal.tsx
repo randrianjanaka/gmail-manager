@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Loader2, Save, AlertCircle } from 'lucide-react'
+import { X, Loader2, Save, AlertCircle, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -44,6 +44,9 @@ export default function FilterModal({ isOpen, onClose, onSave, initialData, allL
   const [error, setError] = useState<string | null>(null)
   const [criteria, setCriteria] = useState<FilterCriteria>({})
   const [action, setAction] = useState<FilterAction>({ addLabelIds: [], removeLabelIds: [] })
+  
+  // UI State
+  const [labelSearch, setLabelSearch] = useState('');
   
   // High-level action states for UI
   const [markRead, setMarkRead] = useState(false);
@@ -144,7 +147,7 @@ export default function FilterModal({ isOpen, onClose, onSave, initialData, allL
           </Button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className="p-6 overflow-y-auto">
           <form id="filter-form" onSubmit={handleSubmit} className="space-y-6">
             
             {/* Error Display */}
@@ -252,12 +255,23 @@ export default function FilterModal({ isOpen, onClose, onSave, initialData, allL
 
                 <div className="space-y-2 md:col-span-2">
                     <Label>Apply labels:</Label>
-                    {allLabels.filter(l => l.type === 'user').length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No user labels available.</p>
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search labels..."
+                            value={labelSearch}
+                            onChange={(e) => setLabelSearch(e.target.value)}
+                            className="pl-9 mb-2"
+                        />
+                    </div>
+                    {allLabels.filter(l => l.type === 'user' && l.name.toLowerCase().includes(labelSearch.toLowerCase())).length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No matching labels found.</p>
                     ) : (
                       <ScrollArea className="h-32 w-full rounded-md border p-3">
                         <div className="space-y-2">
-                          {allLabels.filter(l => l.type === 'user').map(label => (
+                          {allLabels
+                            .filter(l => l.type === 'user' && l.name.toLowerCase().includes(labelSearch.toLowerCase()))
+                            .map(label => (
                             <div key={label.id} className="flex items-center space-x-2">
                               <Checkbox
                                 id={`label-${label.id}`}

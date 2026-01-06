@@ -79,6 +79,8 @@ function HomeContent() {
   const [showFilterPrompt, setShowFilterPrompt] = useState(false)
   const [showCreateFilterModal, setShowCreateFilterModal] = useState(false)
   const [suggestedFilter, setSuggestedFilter] = useState<FilterData | undefined>(undefined)
+  const [lastAssignedLabels, setLastAssignedLabels] = useState<string[]>([]); // Track labels from last assign action
+  const [wasArchived, setWasArchived] = useState(false); // Track if emails were archived
 
   const [loadingLabels, setLoadingLabels] = useState(true)
   const [showLabelModal, setShowLabelModal] = useState(false)
@@ -376,7 +378,8 @@ function HomeContent() {
 
       toast({ title: "Success", description: "Labels assigned." })
       
-      // Save the IDs we just processed so archive logic knows what to act on
+      // Save the labels and IDs we just processed for filter creation prompt
+      setLastAssignedLabels(labels);
       setIdsToArchive(idsToProcess);
       setShowArchiveConfirm(true);
       
@@ -393,38 +396,64 @@ function HomeContent() {
   }
 
   const handleConfirmArchive = async () => {
-      // Re-use the chunk processor logic
-      // Note: idsToArchive contains specific IDs OR is empty array (if all matching was true)
-      // But processBatchOperation logic for 'all matching' relies on the current `isAllMatchingSelected` state
-      // which is still valid here.
-      
-      // If we are in single view (selectedEmailId exists), isAllMatchingSelected is likely false.
-      // idsToArchive handles the list correctly.
-      
       // Close dialog first
       setShowArchiveConfirm(false);
-      
-      // If idsToArchive is empty and NOT all matching, it means empty selection which shouldn't happen.
-      // If idsToArchive is empty AND all matching is true, we pass null/empty IDs and rely on state.
+      setWasArchived(true);
       
       const ids = (idsToArchive && idsToArchive.length > 0) ? idsToArchive : null;
-      // Note: We don't need to check isAllMatchingSelected here because 
-      // handleAssignLabels already resolved the full list of IDs into idsToArchive.
       
       await processBatchOperation('archive', { action: 'archive' }, 'Archiving emails', ids);
       
-    // Refresh list AFTER archive action
-    await fetchEmails();
-
-      setSelectedEmailId(null); // Ensure single view closes if applicable
+      // Refresh list AFTER archive action
+      await fetchEmails();
+      setSelectedEmailId(null);
+      
+      // Now trigger filter creation prompt
+      triggerFilterPrompt(true);
   }
   
   const handleCancelArchive = () => {
       setShowArchiveConfirm(false);
+      setWasArchived(false);
       if (!selectedEmailId) {
           handleClearSelection();
-        fetchEmails(); // Refresh list if they chose NOT to archive
+          fetchEmails();
       }
+      // Trigger filter prompt even if not archived
+      triggerFilterPrompt(false);
+  }
+  
+  // Helper to build and show filter creation prompt
+  const triggerFilterPrompt = (archived: boolean) => {
+      // Build suggested filter from current context
+      const labelIds = lastAssignedLabels
+          .map(name => allLabels.find(l => l.name.toUpperCase() === name.toUpperCase())?.id)
+          .filter((id): id is string => !!id);
+      
+      const removeLabelIds: string[] = ['UNREAD']; // Always mark as read
+      if (archived) removeLabelIds.push('INBOX');
+      
+      const filterData: FilterData = {
+          criteria: {
+              from: currentFilters.from_sender || undefined,
+              to: currentFilters.to_recipient || undefined,
+              subject: currentFilters.subject || undefined,
+          },
+          action: {
+              addLabelIds: labelIds,
+              removeLabelIds: removeLabelIds,
+          }
+      };
+      
+      // Only show prompt if we have at least some meaningful data
+      if (labelIds.length > 0 || filterData.criteria.from || filterData.criteria.subject) {
+          setSuggestedFilter(filterData);
+          setShowFilterPrompt(true);
+      }
+      
+      // Clear tracking state
+      setLastAssignedLabels([]);
+      setWasArchived(false);
   }
 
   const handleApplyFilters = (filters: FilterValues) => {

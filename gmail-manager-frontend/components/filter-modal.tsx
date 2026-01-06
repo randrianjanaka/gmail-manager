@@ -1,18 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Loader2, Save } from 'lucide-react'
+import { X, Loader2, Save, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 export interface FilterCriteria {
   from?: string;
@@ -47,6 +41,7 @@ interface FilterModalProps {
 
 export default function FilterModal({ isOpen, onClose, onSave, initialData, allLabels }: FilterModalProps) {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [criteria, setCriteria] = useState<FilterCriteria>({})
   const [action, setAction] = useState<FilterAction>({ addLabelIds: [], removeLabelIds: [] })
   
@@ -54,9 +49,10 @@ export default function FilterModal({ isOpen, onClose, onSave, initialData, allL
   const [markRead, setMarkRead] = useState(false);
   const [archive, setArchive] = useState(false);
   const [star, setStar] = useState(false);
-  const [applyLabel, setApplyLabel] = useState<string>(''); // Single label selection for simplicity initially, or multi?
+  const [applyLabels, setApplyLabels] = useState<string[]>([]); // Multi-label selection
   
   useEffect(() => {
+    setError(null); // Clear error on open/data change
     if (initialData) {
       setCriteria(initialData.criteria || {});
       const act = initialData.action || { addLabelIds: [], removeLabelIds: [] };
@@ -67,9 +63,9 @@ export default function FilterModal({ isOpen, onClose, onSave, initialData, allL
       setArchive(act.removeLabelIds?.includes('INBOX') || false);
       setStar(act.addLabelIds?.includes('STARRED') || false);
       
-      // Find a user label if any
-      const userLabel = act.addLabelIds?.find(id => allLabels.some(l => l.id === id && l.type === 'user'));
-      if (userLabel) setApplyLabel(userLabel);
+      // Find ALL user labels from initialData
+      const userLabels = act.addLabelIds?.filter(id => allLabels.some(l => l.id === id && l.type === 'user')) || [];
+      setApplyLabels(userLabels);
     } else {
       // Reset
       setCriteria({});
@@ -77,7 +73,7 @@ export default function FilterModal({ isOpen, onClose, onSave, initialData, allL
       setMarkRead(false);
       setArchive(false);
       setStar(false);
-      setApplyLabel('');
+      setApplyLabels([]);
     }
   }, [initialData, isOpen, allLabels]);
 
@@ -85,6 +81,22 @@ export default function FilterModal({ isOpen, onClose, onSave, initialData, allL
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    
+    // Validate: at least one criterion or action must be provided
+    const hasCriteria = criteria.from || criteria.to || criteria.subject || criteria.query || criteria.negated_query || criteria.has_attachment;
+    const hasAction = markRead || archive || star || applyLabels.length > 0;
+    
+    if (!hasCriteria) {
+      setError('Please specify at least one search criterion (From, To, Subject, etc.)');
+      return;
+    }
+    
+    if (!hasAction) {
+      setError('Please specify at least one action (Mark as read, Archive, Star, or Apply a label).');
+      return;
+    }
+    
     setLoading(true);
     
     // Construct final action object
@@ -94,7 +106,10 @@ export default function FilterModal({ isOpen, onClose, onSave, initialData, allL
     if (markRead) finalRemoveLabels.push('UNREAD');
     if (archive) finalRemoveLabels.push('INBOX');
     if (star) finalAddLabels.push('STARRED');
-    if (applyLabel && applyLabel !== 'no_label_value') finalAddLabels.push(applyLabel);
+    // Add all selected labels
+    applyLabels.forEach(labelId => {
+      if (!finalAddLabels.includes(labelId)) finalAddLabels.push(labelId);
+    });
     
     const filterData: FilterData = {
       id: initialData?.id,
@@ -109,8 +124,9 @@ export default function FilterModal({ isOpen, onClose, onSave, initialData, allL
     try {
       await onSave(filterData);
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save filter", error);
+      setError(error?.message || 'Failed to save filter. Please check your inputs and try again.');
     } finally {
       setLoading(false);
     }
@@ -130,6 +146,14 @@ export default function FilterModal({ isOpen, onClose, onSave, initialData, allL
 
         <div className="p-6 overflow-y-auto flex-1">
           <form id="filter-form" onSubmit={handleSubmit} className="space-y-6">
+            
+            {/* Error Display */}
+            {error && (
+              <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/30 text-destructive">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span className="text-sm">{error}</span>
+              </div>
+            )}
             
             {/* Criteria Section */}
             <div className="space-y-4">
@@ -226,24 +250,34 @@ export default function FilterModal({ isOpen, onClose, onSave, initialData, allL
                     <Label htmlFor="star">Star it</Label>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                    <div className="space-y-2">
-                        <Label>Apply the label:</Label>
-                        <Select 
-                            value={applyLabel} 
-                            onValueChange={setApplyLabel}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Choose label..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="no_label_value">Choose label...</SelectItem>
-                                {allLabels.filter(l => l.type === 'user').map(label => (
-                                    <SelectItem key={label.id} value={label.id}>{label.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                <div className="space-y-2 md:col-span-2">
+                    <Label>Apply labels:</Label>
+                    {allLabels.filter(l => l.type === 'user').length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No user labels available.</p>
+                    ) : (
+                      <ScrollArea className="h-32 w-full rounded-md border p-3">
+                        <div className="space-y-2">
+                          {allLabels.filter(l => l.type === 'user').map(label => (
+                            <div key={label.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`label-${label.id}`}
+                                checked={applyLabels.includes(label.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setApplyLabels([...applyLabels, label.id]);
+                                  } else {
+                                    setApplyLabels(applyLabels.filter(id => id !== label.id));
+                                  }
+                                }}
+                              />
+                              <Label htmlFor={`label-${label.id}`} className="font-normal cursor-pointer">
+                                {label.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    )}
                 </div>
               </div>
             </div>

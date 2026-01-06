@@ -267,7 +267,7 @@ export default function FilterModal({ isOpen, onClose, onSave, initialData, allL
                     {allLabels.filter(l => l.type === 'user' && l.name.toLowerCase().includes(labelSearch.toLowerCase())).length === 0 ? (
                       <p className="text-sm text-muted-foreground">No matching labels found.</p>
                     ) : (
-                      <ScrollArea className="h-32 w-full rounded-md border p-3">
+                      <ScrollArea className=" w-full rounded-md border p-3">
                         <div className="space-y-2">
                           {allLabels
                             .filter(l => l.type === 'user' && l.name.toLowerCase().includes(labelSearch.toLowerCase()))

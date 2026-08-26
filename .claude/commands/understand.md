@@ -1,0 +1,23 @@
+---
+description: Absorbe et résume du contenu (fichiers, uploads, sujet large) avant d'en discuter — sans rien modifier ni produire de livrable
+argument-hint: <fichiers ou sujet>
+allowed-tools: Read, Grep, Glob
+---
+
+# /understand — Content Comprehension
+
+Absorb and summarize content — a single file, several files, uploads, or a broad topic — before discussing it.
+For a written, exhaustive deliverable, use the `document-mechanism` skill instead.
+
+The user wants you to absorb and understand content before discussing it.
+
+1. Identify the content: uploaded files first, then any text following the command.
+2. Read and analyze the content thoroughly.
+3. Provide a detailed summary of:
+   - The content's purpose.
+   - Key components, sections, or concepts.
+   - Notable patterns, dependencies, or constraints.
+
+Do NOT generate code or make changes.
+
+End with: **"What would you like to discuss or work on next?"**

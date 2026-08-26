@@ -1,0 +1,27 @@
+# Identifiants OAuth Gmail. Le .gitignore de gmail-manager-backend/ les couvre DEJA
+# la-bas ; ces deux lignes couvrent la RACINE, qui ne l'etait pas. config.py:15-16 les
+# definit en chemins relatifs resolus contre le repertoire courant : lancer le backend
+# depuis la racine du depot les ecrit ici, ou `git check-ignore` sortait en 1.
+# Mesure du 2026-08-26. Ne pas retirer.
+credentials.json
+token.json
+
+# Worktrees — EnterWorktree pose ses arbres ici (~/.claude/rules/worktrees.md).
+# Sans cette ligne, un worktree apparait comme un repertoire non suivi a la racine
+# et un `git add -A` d'une session voisine committerait l'arbre de travail entier
+# d'une autre.
+.claude/worktrees/
+
+# Reglages locaux d'une session Claude : ils peuvent porter des chemins de poste,
+# et c'est l'endroit le plus facile ou committer un secret par accident.
+.claude/settings.local.json
+
+# Les hooks de .claude/hooks/ sont du Python : les executer produit du bytecode
+# a cote d'eux, hors du perimetre du .gitignore de gmail-manager-backend/.
+__pycache__/
+
+# Ce depot n'avait aucun .gitignore racine. Les deux sous-projets ont le leur
+# (gmail-manager-backend/.gitignore, gmail-manager-frontend/.gitignore) et
+# couvrent leurs propres artefacts — ne pas les dupliquer ici.
+.DS_Store
+Thumbs.db

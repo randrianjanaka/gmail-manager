@@ -50,7 +50,7 @@ The user provides a statement to verify, e.g.:
 
 ## Rules
 
-- Apply `.claude/rules/verification-before-assertion.md` — its trigger table is more precise than these rules. In particular: a negation ("X does not exist") needs **two searches of different shapes**; a count is re-derived **in the same turn** as the claim; an order of magnitude weaker than the theory predicts is a **refutation to explain**, not a detail to report.
+- Apply the global rule `~/.claude/rules/verification-before-assertion.md` — its trigger table is more precise than these rules. In particular: a negation ("X does not exist") needs **two searches of different shapes**; a count is re-derived **in the same turn** as the claim; an order of magnitude weaker than the theory predicts is a **refutation to explain**, not a detail to report.
 - Do NOT modify any files. This is a read-only investigation.
 - Be exhaustive — check every service, not just a sample.
 - Use `grep` across the entire codebase for patterns, not just a few known files.
